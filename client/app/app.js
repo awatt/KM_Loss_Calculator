@@ -5,6 +5,7 @@ angular.module('kmLossCalculatorApp', [
   'ngResource',
   'ngSanitize',
   'ngRoute',
+  'ngMaterial',
   'ui.bootstrap'
 ])
   .config(function ($routeProvider, $locationProvider, $httpProvider) {
