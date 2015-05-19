@@ -5,7 +5,7 @@ angular.module('kmLossCalculatorApp')
 
   $http.get('/api/trades').success(function(allTrades) {
     $scope.allTrades = allTrades;
-    console.log("allTrades: ", allTrades)
+    // console.log("allTrades: ", allTrades)
     $scope.accounts = [];
 
     for (var i = 0; i < allTrades.length; i++){
@@ -14,21 +14,26 @@ angular.module('kmLossCalculatorApp')
       }
     }
 
-    $scope.formattedTradeDataFIFO = allocations.formatTradeData($scope.allTrades)[0];
-    $scope.formattedTradeDataLIFO = allocations.formatTradeData($scope.allTrades)[1];
-    console.log("formatted hash table FIFO: ", $scope.formattedTradeDataFIFO)
+    // console.log($scope.accounts)
 
+    $scope.formattedTradeDataFIFO = allocations.formatTradeData($scope.allTrades)[0];
+
+    // console.log("$scope.formattedTradeDataFIFO: ", $scope.formattedTradeDataFIFO)
+
+    $scope.formattedTradeDataLIFO = allocations.formatTradeData($scope.allTrades)[1];
+
+    // console.log("$scope.formattedTradeDataLIFO: ", $scope.formattedTradeDataLIFO)
+
+  });
 
     var startDate = "2010,05,20";
     var endDate = "2014,11,14";
 
+  $scope.generateFIFO = function () {
 
-    $scope.allocationsFIFO = allocations.generateFIFO($scope.formattedTradeDataFIFO, $scope.accounts, startDate, endDate);  
+   allocations.generateFIFO($scope.formattedTradeDataFIFO, $scope.accounts, startDate, endDate);  
 
-
-  });
-
-
+} 
 
     // $scope.allocationsLIFO = allocations.generateLIFO($scope.formattedTradeDataLIFO);
 

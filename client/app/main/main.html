@@ -29,6 +29,8 @@
         </div>
       </div>
 
+      <md-button flex class="md-button md-cornered md-button-colored btn-lg home-input-button btn-prev" ng-click="generateFIFO()">Generate FIFO</md-button>
+
       <div>
         <md-content class="md-padding">
         <md-tabs md-dynamic-height md-border-bottom>
@@ -55,8 +57,12 @@
     </md-content>
     </div>
 
+    <div>
+    {{formattedTradeDataFIFO}}
+    </div>
+
 <div layout="row" id="stick-bottom" class="container container-narrow">
-        <md-button flex class="md-button md-cornered md-button-colored btn-lg home-input-button btn-prev" ng-click="showPrevPanel()">Edit Dates</md-button>
+        
         &nbsp;&nbsp;
         <md-button flex class="md-button md-cornered md-button-colored btn-lg home-input-button" ng-click="saveEvent()">Create Poll</md-button>
       </div>
