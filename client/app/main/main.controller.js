@@ -7,11 +7,10 @@ angular.module('kmLossCalculatorApp')
     $scope.allTrades = allTrades;
     console.log("allTrades: ", allTrades)
     $scope.accounts = [];
-  
+
   //generate data linked list
   var dataList = new allocations.List
-  console.log("dataList before add loop: ", dataList)
-    for (var i = 0; i < allTrades.length; i++){
+  for (var i = 0; i < allTrades.length; i++){
 
       //extract list of trading accounts
       if ($scope.accounts.indexOf($scope.allTrades[i].account) < 0){
@@ -19,8 +18,8 @@ angular.module('kmLossCalculatorApp')
       }
 
       //linked list
+      // console.log("alltrades account and date: ", allTrades[i].account + " '" + allTrades[i].tradeDate)
       dataList.add(allTrades[i]);
-
 
     }
 
@@ -28,21 +27,22 @@ angular.module('kmLossCalculatorApp')
     
 
     console.log("dataList: ", dataList)
-    console.log("sales ", dataList.findSales())
-
-  });
 
     var startDate = "2010,05,20";
     var endDate = "2014,11,14";
 
+    $scope.generateFIFO = function () {
 
-  $scope.generateFIFO = function () {
+      allocations.generateFIFO(dataList);
 
-  $scope.duraStats = $scope.dataList.generateFIFO();
+    } 
 
-    console.log($scope.duraStats)
+  });
 
-} 
+
+
+
+
 
     // $scope.allocationsLIFO = allocations.generateLIFO($scope.formattedTradeDataLIFO);
 

@@ -42,25 +42,22 @@ function Node(trade) {
 
   List.prototype.insert = function(newEl, currNode) {
     var newNode = new Node(newEl);
-    newNode.next = current.next;
-    newNode.prev = current;
-    current.next = newNode;
+    newNode.next = currNode.next;
+    newNode.prev = currNode;
+    currNode.next = newNode;
   }
 
   List.prototype.findSales = function() {
     var sales = [];
     var currNode = this.head;
-    console.log("currNode: ", currNode)
     while (currNode !== this.tail){
 
 
       if(currNode.el.transactionType === 'SELL' && currNode.el.allocatables < 0){
-        console.log("sales: ", currNode)
         sales.push(currNode)
       }
 
       if(currNode.el.transactionType === 'WITHDRAWAL' && currNode.el.allocatables < 0){
-        console.log("withdrawals: ", currNode)
         sales.push(currNode)
       }
 
@@ -70,10 +67,13 @@ function Node(trade) {
   }
 
   List.prototype.findAllocatableBuys = function(currSale) {
+    console.log("currSale in findAllocatableBuys: ", currSale)
     var allocatableBuys = [];
     var currNode = this.head;
     while (currNode !== currSale){
-      if(currNode.el.account === currSale.el.account && currNode.el.transactionType === 'BUY' && currNode.el.allocatables > 0){
+      if(currNode.el.account === currSale.el.account 
+        && currNode.el.allocatables > 0 
+        && (currNode.el.transactionType === 'BUY'|| currNode.el.holdingType === 'Beginning Holdings')){
         allocatableBuys.push(currNode);
       }
       currNode = currNode.next;
@@ -82,77 +82,82 @@ function Node(trade) {
   }
 
   List.prototype.allocateSales = function(buyNode, saleNode){
-    var offset = buyNode.allocatables + saleNode.allocatables;
+
+    var offset = buyNode.el.allocatables + saleNode.el.allocatables;
     if(offset > 0){
-      buyNode.allocatables = offset;
-      saleNode.allocatables = 0;
+      buyNode.el.allocatables = offset;
+      saleNode.el.allocatables = 0;
     } else {
-      buyNode.allocatables = 0;
-      saleNode.allocatables = offset;
+      buyNode.el.allocatables = 0;
+      saleNode.el.allocatables = offset;
     }
     return saleNode;
   }
 
   List.prototype.allocateWithdrawals = function(buyNode, withdrawalNode){
-    
+
+    // console.log("buyNode in allocateWithdrawals: ", buyNode)
     var newTrade = {
-      account: withdrawalNode[transferAccount],
-      tradeDate: withdrawalNode[tradeDate],
-      holdingType: buyNode[holdingType],
-      pricePerShare: buyNode[pricePerShare],
+      account: withdrawalNode.el.transferAccount,
+      tradeDate: withdrawalNode.el.tradeDate,
+      holdingType: buyNode.el.holdingType,
+      pricePerShare: buyNode.el.pricePerShare,
       quantity: 0,
       allocatables: 0,
-      transactionType: buyNode[transactionType],
-      transferAccount: ""
+      transactionType: "BUY",
+      transferAccount: withdrawalNode.el.account
     };
 
-    
-
-
-    var offset = buyNode.allocatables + withdrawalNode.allocatables;
+    var offset = buyNode.el.allocatables + withdrawalNode.el.allocatables;
+    var allocated = 0;
     if(offset > 0){
-      buyNode.allocatables = offset;
-      withdrawalNode.allocatables = 0;
+      buyNode.el.allocatables = offset;
+      allocated = withdrawalNode.el.allocatables;
+      withdrawalNode.el.allocatables = 0;
     } else {
-      buyNode.allocatables = 0;
-      withdrawalNode.allocatables = offset;
+      buyNode.el.allocatables = 0;
+      allocated = withdrawalNode.el.allocatables - offset;
+      withdrawalNode.el.allocatables = offset;
     }
+
+    newTrade.quantity = -allocated;
+    newTrade.allocatables = -allocated
+
+    this.insert(newTrade, withdrawalNode);
+
     return withdrawalNode;
   }
 
-  function generateFIFO() {
-    var lastNode = this.findLast();
-    console.log("lastNode in generateFIFO: ", lastNode)
-    var currSale = findNextSales(this.head);
-    console.log("currSale in generateFIFO: ", currSale)
-    var buyNode = findNextAllocatables(currSale, this.head);
-    console.log("buyNode in generateFIFO: ", buyNode)
-    var duraStats = [];
+  function generateFIFO(list) {
+    var sales = list.findSales();
 
-    var counter = 1;
-    
-    while(currSale.next !== lastNode){
+    sales.forEach(function(sale){
+      var buys = list.findAllocatableBuys(sale);
+      var i = 0;
 
-      while (currSale.allocatables < 0) {
-        var stats = allocateSales(buyNode, currSale.allocatables);
-        console.log("stats in generateFIFO: ", stats)
-        currSale.allocatables = stats[numShares];
-        duraStats.push(stats);
-        console.log("duraStats in generateFIFO: ", duraStats)
-        buyNode = findNextAllocatables(buyNode);
+      while(sale.el.allocatables < 0){
+        if (sale.el.transactionType === "SELL"){
+          console.log("sale allocatables and account before: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
+          console.log("buy tradeDate account and allocatables before: ", buys[i].el.tradeDate +" "+ buys[i].el.account +" "+ buys[i].el.allocatables)
+          sale = list.allocateSales(buys[i], sale);
+          console.log("sale allocatables after: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
+          i++;
+        } else {
+          console.log("withdrawal allocatables and account before: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
+          console.log("buy tradeDate account and allocatables before: ", buys[i].el.tradeDate +" "+ buys[i].el.account +" "+ buys[i].el.allocatables)
+          sale = list.allocateWithdrawals(buys[i], sale);
+          console.log("withdrawal allocatables after: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
+          i++;
+        }
       }
 
-      currSale = findNextSales(currSale);
-      console.log(currSale)
-      buyNode = findNextAllocatables(currSale, buyNode);
-      console.log(buyNode)
+    })
 
-      console.log(counter);
-      counter++
+  }
 
-    }
 
-    return duraStats;
+
+  function generatLIFO(list){
 
   }
 
