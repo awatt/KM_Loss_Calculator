@@ -33,9 +33,18 @@ angular.module('kmLossCalculatorApp')
 
     $scope.generateFIFO = function () {
 
-      allocations.generateFIFO(dataList);
+      var accountStats = allocations.generateFIFO(dataList, startDate, endDate);
+      console.log("accountStats: ", accountStats)
 
     } 
+
+    $scope.generateLIFO = function () {
+
+      var accountStats = allocations.generateLIFO(dataList, startDate, endDate);
+      console.log("accountStats: ", accountStats)
+
+    } 
+
 
   });
 
