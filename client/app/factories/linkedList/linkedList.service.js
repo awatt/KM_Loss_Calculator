@@ -1,37 +1,37 @@
 'use strict';
 
 angular.module('kmLossCalculatorApp')
-  .factory('allocations', function () {
+.factory('linkedList', function () {
 
-function Node(trade) {
+  function Node(trade) {
 
-  var setClassBuys = function(trade){
-    var allocation = 0;
-    if (trade.transactionType === "BUY"){
-      allocation = trade.quantity;
+    var setClassBuys = function(trade){
+      var allocation = 0;
+      if (trade.transactionType === "BUY"){
+        allocation = trade.quantity;
+      }
+      return allocation;
     }
-    return allocation;
+
+    var newEl = {
+      account: trade.account,
+      tradeDate: trade.tradeDate,
+      holdingType: trade.holdingType,
+      pricePerShare: trade.pricePerShare,
+      quantity: trade.quantity,
+      allocatables: trade.quantity,
+      allocatedToOther: 0,
+      allocatedToClassBuy: setClassBuys(trade),
+      allocatedToClassSell: 0,
+      allocatedToTransClassShares: 0,
+      transactionType: trade.transactionType,
+      transferAccount: trade.transferAccount
+    };
+
+    this.el = newEl;
+    this.next = null;
+    this.prev = null;
   }
-
-  var newEl = {
-    account: trade.account,
-    tradeDate: trade.tradeDate,
-    holdingType: trade.holdingType,
-    pricePerShare: trade.pricePerShare,
-    quantity: trade.quantity,
-    allocatables: trade.quantity,
-    allocatedToOther: 0,
-    allocatedToClassBuy: setClassBuys(trade),
-    allocatedToClassSell: 0,
-    allocatedToTransClassShares: 0,
-    transactionType: trade.transactionType,
-    transferAccount: trade.transferAccount
-  };
-
-  this.el = newEl;
-  this.next = null;
-  this.prev = null;
-}
 
   function List() {
     this.head = null;
@@ -54,7 +54,6 @@ function Node(trade) {
 
   List.prototype.insert = function(newEl, currNode) {
     var newNode = new Node(newEl);
-    // console.log("newNode inserts account tradeDate quantity pricePerShare: ", newNode.el.account +" "+ newNode.el.tradeDate+" "+newNode.el.quantity+" "+newNode.el.pricePerShare)
     
     newNode.next = currNode;
     newNode.prev = currNode.prev;
@@ -83,21 +82,20 @@ function Node(trade) {
   }
 
   List.prototype.findAllocatableBuys = function(currSale) {
-
-    var allocatableBuys = [];
-    var currNode = this.head;
-    while (currNode !== currSale){
-      if(currNode.el.account === currSale.el.account 
-        && currNode.el.allocatables > 0 
-        && (currNode.el.transactionType === 'BUY'|| currNode.el.holdingType === 'Beginning Holdings')){
-        allocatableBuys.push(currNode);
+      var allocatableBuys = [];
+      var currNode = this.head;
+      while (currNode !== currSale){
+        if(currNode.el.account === currSale.el.account 
+          && currNode.el.allocatables > 0 
+          && (currNode.el.transactionType === 'BUY'|| currNode.el.holdingType === 'Beginning Holdings')){
+          allocatableBuys.push(currNode);
       }
       currNode = currNode.next;
     }
     return allocatableBuys;
   }
-
-  List.prototype.findBeginningHoldings = function(account) {
+  
+List.prototype.findBeginningHoldings = function(account) {
     var currNode = this.head;
     while (currNode !== this.tail){
       if(currNode.el.account === account && currNode.el.holdingType === "Beginning Holdings"){
@@ -107,8 +105,7 @@ function Node(trade) {
     }
   }
 
-  List.prototype.allocateSales = function(buyNode, saleNode){
-
+List.prototype.allocateSales = function(buyNode, saleNode){
     var offset = buyNode.el.allocatables + saleNode.el.allocatables;
     if(offset > 0){
       if(buyNode.el.holdingType === "Beginning Holdings"){
@@ -185,7 +182,6 @@ function Node(trade) {
     return withdrawalNode;
   }
 
-
   List.prototype.transferNewShares = function(buyNode, withdrawalNode){
 
     var newTrade = {
@@ -205,43 +201,55 @@ function Node(trade) {
     this.insert(newTrade, withdrawalNode);
   }
 
-
   List.prototype.generateAccountStats = function(account, startDate, endDate) {
+
+    var currNode = this.head
+    var preClassHoldings = this.findBeginningHoldings(account).el.quantity;
+    var classPeriodPurchases = 0;
+    var expenditures = 0;
+    var classPeriodSales = 0;
+    var classPeriodProceeds = 0;
+    var recognizedSales = 0;
+    var recognizedProceeds = 0;
+    var sharesRetained = 0;
+    var valueOfRetainedShares = 0;
+    var damages_gain = 0;
     
-    var currNode = this.head, sharesPurchased = 0, expenditures = 0, sharesSold = 0, proceeds = 0; 
-    var testquantity = 0;
     
     while (currNode !== this.tail) {
 
       if(currNode.el.transactionType === "BUY" && currNode.el.account === account && currNode.el.tradeDate >= startDate && currNode.el.tradeDate <= endDate){
-        
-        sharesPurchased += currNode.el.allocatedToClassBuy;
-        expenditures += currNode.el.allocatedToClassBuy*currNode.el.pricePerShare;
 
+        classPeriodPurchases += currNode.el.allocatedToClassBuy;
+        expenditures += currNode.el.allocatedToClassBuy*currNode.el.pricePerShare;
+        sharesRetained += currNode.el.allocatables;
+        valueOfRetainedShares += currNode.el.allocatables*currNode.el.pricePerShare;
 
       }
       if(currNode.el.transactionType === "SELL" && currNode.el.account === account && currNode.el.tradeDate >= startDate && currNode.el.tradeDate <= endDate){
-    
-        sharesSold -= currNode.el.allocatedToClassSell
-        proceeds -= currNode.el.allocatedToClassSell*currNode.el.pricePerShare;
 
-        // console.log("sell tradeDate account sharesSold pricePerShare: ", currNode.el.tradeDate+" "+currNode.el.account+" "+ (currNode.el.quantity - currNode.el.allocatables - currNode.el.preClassAllocations)+" "+currNode.el.pricePerShare)
-
-        // console.log("buy tradeDate account:", currNode.el.tradeDate+" "+currNode.el.account)
-        // console.log("quantity allocated to class buys: ", currNode.el.allocatedToClassBuy)
-        // console.log("pricePerShare: ", currNode.el.pricePerShare)
-
+        classPeriodSales -= currNode.el.quantity;
+        classPeriodProceeds -= currNode.el.quantity*currNode.el.pricePerShare;
+        recognizedSales -= currNode.el.allocatedToClassSell;
+        recognizedProceeds -= currNode.el.allocatedToClassSell*currNode.el.pricePerShare;
 
       }
       currNode = currNode.next;
     }
 
+    damages_gain = recognizedProceeds - expenditures;
+
     return {
-      sharesPurchased: sharesPurchased,
+      preClassHoldings: preClassHoldings,
+      classPeriodPurchases: classPeriodPurchases,
       expenditures: expenditures,
-      sharesSold: sharesSold,
-      proceeds: proceeds,
-      testquantity: testquantity
+      classPeriodSales: classPeriodSales,
+      classPeriodProceeds: classPeriodProceeds,
+      recognizedSales: recognizedSales,
+      recognizedProceeds: recognizedProceeds,
+      sharesRetained: sharesRetained,
+      valueOfRetainedShares: valueOfRetainedShares,
+      damages_gain: damages_gain
     };
   }
 
@@ -257,6 +265,7 @@ function Node(trade) {
       if(currNode.el.transactionType === 'BUY'){
 
         var tradeData = {
+          account: currNode.el.account,
           tradeDate: currNode.el.tradeDate,
           sharesRetained: currNode.el.allocatables,
           pricePerShare: currNode.el.pricePerShare
@@ -274,100 +283,8 @@ function Node(trade) {
 
   }
 
-  function generateFIFO(list, accounts, startDate, endDate) {
-    var sales = list.findSales(startDate, endDate);
-    var duraStatsFIFO = [];
-
-    //generate baseline dura snapshot
-    duraStatsFIFO.push(list.generateDuraSnapshot(startDate, endDate));
-
-    sales.forEach(function(sale){
-      var buys = list.findAllocatableBuys(sale);
-      var i = 0;
-
-      while(sale.el.allocatables < 0){
-        if (sale.el.transactionType === "SELL"){
-          // console.log("sale allocatables and account before: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          // console.log("buy tradeDate account and allocatables before: ", buys[i].el.tradeDate +" "+ buys[i].el.account +" "+ buys[i].el.allocatables)
-          sale = list.allocateSales(buys[i], sale);
-          // console.log("sale allocatables after: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          i++;
-        } else {
-          // console.log("withdrawal allocatables and account before: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          // console.log("buy tradeDate account allocatables and holding type before: ", buys[i].el.tradeDate +" "+ buys[i].el.account +" "+ buys[i].el.allocatables+" "+ buys[i].el.holdingType)
-          sale = list.allocateWithdrawals(buys[i], sale);
-
-          // console.log("withdrawal allocatables after: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          i++;
-        }
-      };
-
-      //take Dura snapshot after each allocation and store 
-      duraStatsFIFO.push(list.generateDuraSnapshot(startDate, sale.el.tradeDate));
-
-    });
-
-    var stats = list.generateAccountStats("Account 2", startDate, endDate);
-
-    stats.duraStatsFIFO = duraStatsFIFO;
-
-
-    return stats
-
-  }
-
-
-  function generateLIFO(list, accounts, startDate, endDate) {
-    var sales = list.findSales(startDate, endDate);
-
-    var duraStatsLIFO = [];
-
-    
-    duraStatsLIFO.push(list.generateDuraSnapshot(startDate, endDate));
-
-    //for each sale, generate all the class allocations
-    sales.forEach(function(sale){
-      var buys = list.findAllocatableBuys(sale);
-      buys = buys.reverse();
-
-      var i = 0;
-
-      while(sale.el.allocatables < 0){
-        if (sale.el.transactionType === "SELL"){
-          // console.log("sale allocatables and account before: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          // console.log("buy tradeDate account and allocatables before: ", buys[i].el.tradeDate +" "+ buys[i].el.account +" "+ buys[i].el.allocatables)
-          sale = list.allocateSales(buys[i], sale);
-          // console.log("sale allocatables after: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          i++;
-        } else {
-          // console.log("withdrawal allocatables and account before: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          // console.log("buy tradeDate account allocatables and holding type before: ", buys[i].el.tradeDate +" "+ buys[i].el.account +" "+ buys[i].el.allocatables+" "+ buys[i].el.holdingType)
-          sale = list.allocateWithdrawals(buys[i], sale);
-
-          // console.log("withdrawal allocatables after: ", sale.el.tradeDate + " " + sale.el.account +" "+ sale.el.allocatables)
-          i++;
-        }
-      };
-
-      //take Dura snapshot after each allocation and store 
-      duraStatsLIFO.push(list.generateDuraSnapshot(startDate, sale.el.tradeDate));
-
-    });
-
-    var stats = list.generateAccountStats("Account 2", startDate, endDate);
-
-    stats.duraStatsLIFO = duraStatsLIFO;
-
-
-    return stats
-
-  }
-
-
     // Public API here
     return {
-      generateFIFO: generateFIFO,
-      generateLIFO: generateLIFO,
       List: List
     };
   });

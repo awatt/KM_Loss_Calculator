@@ -1,76 +1,51 @@
 'use strict';
 
 angular.module('kmLossCalculatorApp')
-.controller('MainCtrl', function ($scope, $http, allocations) {
+.controller('MainCtrl', function ($scope, $http, linkedList, statistics) {
 
   $http.get('/api/trades').success(function(allTrades) {
-    $scope.allTrades = allTrades;
-    console.log("allTrades: ", allTrades)
-    $scope.accounts = [];
 
-  //generate data linked list
-  var dataList = new allocations.List
-  for (var i = 0; i < allTrades.length; i++){
-
-      //extract list of trading accounts
-      if ($scope.accounts.indexOf($scope.allTrades[i].account) < 0){
-        $scope.accounts.push(allTrades[i].account);
-      }
-
-      //linked list
-      // console.log("alltrades account and date: ", allTrades[i].account + " '" + allTrades[i].tradeDate)
-      dataList.add(allTrades[i]);
-
-    }
-
-    $scope.dataList = dataList;
-    
-
-    console.log("dataList: ", dataList)
-
+    //temp values
     var startDate = "2010,05,20";
     var endDate = "2014,11,14";
 
-    $scope.generateFIFO = function () {
+    $scope.duraDates = ["2014,09,05","2014,09,08","2014,09,30","2014,10,09","2014,10,15","2014,10,17","2014,10,20","2014,10,24","2014,10,31","2014,11,07","2014,11,13","2014,11,14","2014,11,21"]
 
-      var accountStats = allocations.generateFIFO(dataList, startDate, endDate);
-      console.log("accountStats: ", accountStats)
+    //raw trade data from backend
+    $scope.allTrades = allTrades;
+    $scope.accounts = [];
+
+    //new separate linked list each for FIFO and LIFO allocations
+    $scope.dataListFIFO = new linkedList.List
+    $scope.dataListLIFO = new linkedList.List
+
+
+    // extract complete list of trading accounts for main display table and populate linked lists with raw data
+    for (var i = 0; i < allTrades.length; i++){
+      if ($scope.accounts.indexOf($scope.allTrades[i].account) < 0){
+        $scope.accounts.push(allTrades[i].account);
+      }
+          $scope.dataListFIFO.add(allTrades[i]);
+          $scope.dataListLIFO.add(allTrades[i]);
+    }
+
+
+    $scope.generateStats = function () {
+
+      $scope.statsByAccountFIFO = statistics.generateFIFO($scope.dataListFIFO, $scope.accounts, startDate, endDate);
+      $scope.statsByAccountLIFO = statistics.generateLIFO($scope.dataListLIFO, $scope.accounts, startDate, endDate);
+      console.log($scope.statsByAccountFIFO);
+      console.log($scope.statsByAccountLIFO);
+
+    }
+
+    $scope.displayDuraStats = function(){
+
+      $scope.duraStats;
+
 
     } 
 
-    $scope.generateLIFO = function () {
-
-      var accountStats = allocations.generateLIFO(dataList, startDate, endDate);
-      console.log("accountStats: ", accountStats)
-
-    } 
-
-
   });
 
-
-
-
-
-
-    // $scope.allocationsLIFO = allocations.generateLIFO($scope.formattedTradeDataLIFO);
-
-
-
-
-
-
-
-
-    // $scope.addThing = function() {
-    //   if($scope.newThing === '') {
-    //     return;
-    //   }
-    //   $http.post('/api/things', { name: $scope.newThing });
-    //   $scope.newThing = '';
-    // };
-
-    // $scope.deleteThing = function(thing) {
-    //   $http.delete('/api/things/' + thing._id);
-    // };
-  });
+});
