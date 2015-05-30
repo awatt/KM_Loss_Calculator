@@ -95,41 +95,41 @@ angular.module('kmLossCalculatorApp')
     return allocatableBuys;
   }
   
-List.prototype.findBeginningHoldings = function(account) {
-    var currNode = this.head;
-    while (currNode !== this.tail){
-      if(currNode.el.account === account && currNode.el.holdingType === "Beginning Holdings"){
-        return currNode;
+  List.prototype.findBeginningHoldings = function(account) {
+      var currNode = this.head;
+      while (currNode !== this.tail){
+        if(currNode.el.account === account && currNode.el.holdingType === "Beginning Holdings"){
+          return currNode;
+        }
+        currNode = currNode.next;
       }
-      currNode = currNode.next;
     }
-  }
 
-List.prototype.allocateSales = function(buyNode, saleNode){
-    var offset = buyNode.el.allocatables + saleNode.el.allocatables;
-    if(offset > 0){
-      if(buyNode.el.holdingType === "Beginning Holdings"){
-        saleNode.el.allocatedToOther += saleNode.el.allocatables;
-        buyNode.el.allocatables = offset;
-        saleNode.el.allocatables = 0;
+  List.prototype.allocateSales = function(buyNode, saleNode){
+      var offset = buyNode.el.allocatables + saleNode.el.allocatables;
+      if(offset > 0){
+        if(buyNode.el.holdingType === "Beginning Holdings"){
+          saleNode.el.allocatedToOther += saleNode.el.allocatables;
+          buyNode.el.allocatables = offset;
+          saleNode.el.allocatables = 0;
+        } else {
+          saleNode.el.allocatedToClassSell += saleNode.el.allocatables;
+          buyNode.el.allocatables = offset;
+          saleNode.el.allocatables = 0;
+        }
       } else {
-        saleNode.el.allocatedToClassSell += saleNode.el.allocatables;
-        buyNode.el.allocatables = offset;
-        saleNode.el.allocatables = 0;
+        if(buyNode.el.holdingType === "Beginning Holdings"){
+          saleNode.el.allocatedToOther -= buyNode.el.allocatables;
+          saleNode.el.allocatables = offset;
+          buyNode.el.allocatables = 0;
+        } else {
+          saleNode.el.allocatedToClassSell -= buyNode.el.allocatables;
+          saleNode.el.allocatables = offset;
+          buyNode.el.allocatables = 0;
+        }
       }
-    } else {
-      if(buyNode.el.holdingType === "Beginning Holdings"){
-        saleNode.el.allocatedToOther -= buyNode.el.allocatables;
-        saleNode.el.allocatables = offset;
-        buyNode.el.allocatables = 0;
-      } else {
-        saleNode.el.allocatedToClassSell -= buyNode.el.allocatables;
-        saleNode.el.allocatables = offset;
-        buyNode.el.allocatables = 0;
-      }
+      return saleNode;
     }
-    return saleNode;
-  }
 
   List.prototype.allocateWithdrawals = function(buyNode, withdrawalNode){
 
@@ -167,7 +167,6 @@ List.prototype.allocateSales = function(buyNode, saleNode){
         transferAccountBegHoldings.el.allocatables += buyNode.el.allocatables;
         withdrawalNode.el.allocatables = offset;
         buyNode.el.allocatables = 0;
-        
 
       } else {
         //allocate the withdrawal to class shares in the account, then transfer them
@@ -253,31 +252,28 @@ List.prototype.allocateSales = function(buyNode, saleNode){
     };
   }
 
-  List.prototype.generateDuraSnapshot = function(startDate, endDate){
-    var snapshot = {};
-    var key = endDate;
-    var data = [];
+  List.prototype.generateDuraSnapshot = function(snapDate){
+    var snapshot = [];
     var currNode = this.head;
 
-    while (currNode !== this.tail && currNode.el.tradeDate >= startDate && currNode.el.tradeDate <= endDate){
+    while (currNode !== this.tail){
 
 
       if(currNode.el.transactionType === 'BUY'){
 
-        var tradeData = {
+        var trade = {
           account: currNode.el.account,
+          snapDate: snapDate,
           tradeDate: currNode.el.tradeDate,
           sharesRetained: currNode.el.allocatables,
           pricePerShare: currNode.el.pricePerShare
         };
 
-        data.push(tradeData);
+        snapshot.push(trade);
       }
 
       currNode = currNode.next;
     }
-
-    snapshot[key] = data;
 
     return snapshot;
 
@@ -287,7 +283,7 @@ List.prototype.allocateSales = function(buyNode, saleNode){
     return {
       List: List
     };
-  });
+});
 
 
 

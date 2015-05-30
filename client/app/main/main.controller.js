@@ -34,8 +34,8 @@ angular.module('kmLossCalculatorApp')
 
       $scope.statsByAccountFIFO = statistics.generateFIFO($scope.dataListFIFO, $scope.accounts, startDate, endDate);
       $scope.statsByAccountLIFO = statistics.generateLIFO($scope.dataListLIFO, $scope.accounts, startDate, endDate);
-      console.log($scope.statsByAccountFIFO);
-      console.log($scope.statsByAccountLIFO);
+      console.log("statsByAccountFIFO: ", $scope.statsByAccountFIFO);
+      console.log("statsByAccountLIFO: ", $scope.statsByAccountLIFO);
 
     }
 
