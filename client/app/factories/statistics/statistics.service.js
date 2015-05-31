@@ -117,11 +117,42 @@ angular.module('kmLossCalculatorApp')
     return statsByAccount;  
   }
 
+  function calculateTotals(statsByAccount){
+    var totals = {
+      preClassHoldings: 0,
+      classPeriodPurchases: 0,
+      expenditures: 0,
+      classPeriodSales: 0,
+      classPeriodProceeds: 0,
+      recognizedSales: 0,
+      recognizedProceeds: 0,
+      sharesRetained: 0,
+      valueOfRetainedShares: 0,
+      damages_gain: 0
+    };
+
+    for (var account in statsByAccount){
+      totals.preClassHoldings += statsByAccount[account].preClassHoldings;
+      totals.classPeriodPurchases += statsByAccount[account].classPeriodPurchases;
+      totals.expenditures += statsByAccount[account].expenditures;
+      totals.classPeriodSales += statsByAccount[account].classPeriodSales;
+      totals.classPeriodProceeds += statsByAccount[account].classPeriodProceeds;
+      totals.recognizedSales += statsByAccount[account].recognizedSales;
+      totals.recognizedProceeds += statsByAccount[account].recognizedProceeds;
+      totals.sharesRetained += statsByAccount[account].sharesRetained;
+      totals.valueOfRetainedShares += statsByAccount[account].valueOfRetainedShares;
+      totals.damages_gain += statsByAccount[account].damages_gain;
+    }
+
+    return totals;
+  }
+
 
     // Public API here
     return {
       generateFIFO: generateFIFO,
-      generateLIFO: generateLIFO
+      generateLIFO: generateLIFO,
+      calculateTotals: calculateTotals
     };
   });
 

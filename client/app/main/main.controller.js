@@ -3,17 +3,38 @@
 angular.module('kmLossCalculatorApp')
 .controller('MainCtrl', function ($scope, $http, linkedList, statistics) {
 
+    //Panel Show Logic
+    $scope.currentPanel = 0;
+
+    $scope.showNextPanel = function(currentPanel){
+        if (currentPanel<2){
+          $scope.currentPanel+=1;
+        }
+        console.log("$scope.currentPanel: ", $scope.currentPanel)
+    };
+    $scope.showPrevPanel = function(){
+      if ($scope.currentPanel!==0){
+        $scope.currentPanel-=1;
+      }
+    };
+
   $http.get('/api/trades').success(function(allTrades) {
 
     //temp values
-    var startDate = "2010,05,20";
-    var endDate = "2014,11,14";
+    $scope.startDate = "2010,05,20";
+    $scope.endDate = "2014,11,14";
+
+
+    $scope.newStartDate = new Date($scope.startDate)
+    $scope.newEndDate = new Date($scope.endDate)
 
     $scope.duraDates = ["2014,09,05","2014,09,08","2014,09,30","2014,10,09","2014,10,15","2014,10,17","2014,10,20","2014,10,24","2014,10,31","2014,11,07","2014,11,13","2014,11,14","2014,11,21"]
 
     //raw trade data from backend
     $scope.allTrades = allTrades;
     $scope.accounts = [];
+
+    console.log("allTrades: ", allTrades)
 
     //new separate linked list each for FIFO and LIFO allocations
     $scope.dataListFIFO = new linkedList.List
@@ -32,12 +53,23 @@ angular.module('kmLossCalculatorApp')
 
     $scope.generateStats = function () {
 
-      $scope.statsByAccountFIFO = statistics.generateFIFO($scope.dataListFIFO, $scope.accounts, startDate, endDate);
-      $scope.statsByAccountLIFO = statistics.generateLIFO($scope.dataListLIFO, $scope.accounts, startDate, endDate);
+      $scope.statsByAccountFIFO = statistics.generateFIFO($scope.dataListFIFO, $scope.accounts, $scope.startDate, $scope.endDate);
+      $scope.statsByAccountLIFO = statistics.generateLIFO($scope.dataListLIFO, $scope.accounts, $scope.startDate, $scope.endDate);
+      $scope.totalsFIFO = statistics.calculateTotals($scope.statsByAccountFIFO);
+      $scope.totalsLIFO = statistics.calculateTotals($scope.statsByAccountLIFO);
       console.log("statsByAccountFIFO: ", $scope.statsByAccountFIFO);
       console.log("statsByAccountLIFO: ", $scope.statsByAccountLIFO);
+      console.log("$scope.totalsFIFO: ", $scope.totalsFIFO);
+      console.log("$scope.totalsLIFO: ", $scope.totalsLIFO);
 
     }
+
+
+
+
+
+
+
 
     $scope.displayDuraStats = function(){
 
@@ -45,6 +77,22 @@ angular.module('kmLossCalculatorApp')
 
 
     } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   });
 

@@ -33,3 +33,51 @@
     width: 700px;
     background-color: white;
 }
+
+.tradeData {
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+}
+
+#statsButton {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+#prevButton, #duraButton {
+    margin-left: auto;
+    margin-right: auto;
+    display: inline-block;
+}
+
+.statsTable > tbody > tr > td {
+    border-bottom: 2.5px solid #A2A39E;
+}
+
+.statsTable > tbody > tr:first-child > td {
+    border: none;
+    text-align: center;
+}
+
+.titleRow{
+    color: white;
+    background-color: black;
+}
+
+.noWrap {
+    white-space: nowrap;
+}
+
+.cellData {
+    text-align: right;
+}
+
+.tableHeadings {
+    font-size: 90%;
+}
+
+.tradeData {
+    text-align: center;
+}
