@@ -1,10 +1,6 @@
 <div ng-include="'components/navbar/navbar.html'"></div>
       
 <div class="container">
-  <div layout="column">
-
-
-
 
   <div ng-show="currentPanel===0" layout="column" flex>
     <div layout="row">
@@ -51,21 +47,17 @@
 
       <div ng-show="currentPanel===1" layout="column" flex>
 
-        <section layout="row" layout-sm="column" layout-align="left left">
+        <section layout="row" layout-sm="column" layout-align="left center">
           <md-button class="md-raised" ng-click="showPrevPanel(currentPanel)">Back</md-button>
-          <md-button class="md-raised md-primary" ng-click="">Generate Dura Stats</md-button>
+          <md-button class="md-raised md-primary" ng-click="displayDuraStats(); showNextPanel(currentPanel)">Generate Dura Stats</md-button>
           <md-button class="md-raised md-warn">Printable Version</md-button>
           <md-button ng-disabled="true" class="md-raised md-primary">Disabled</md-button>
         </section>
 
-        <md-input-container flex>
+<!--         <md-input-container flex>
         <label>Enter Dura Dates</label>
         <input type="date" ng-model="user.submissionDate">
-      </md-input-container>
-
-
-
-
+      </md-input-container> -->
 
         <div layout="row">
 
@@ -120,21 +112,14 @@
           </table><br><br>
         </div>
 
-<div layout="row">
-          <!-- <table class="table table-responsive disable-text-selection">
-            <tbody>
-              <tr>
-                <h2>Client: Damages Summary (FIFO) in Case Name</h2>
-              </tr>
-            </tbody>
-          </table> -->
+      <div layout="row">
 
           <table class="statsTable table table-bordered table-condensed table-responsive disable-text-selection">
             <tbody>
               <tr>
                 <td colspan=11 class="titleRow">
                   <h4>[Client]: Damages Summary (LIFO) in [Case Name]</h4>
-                  <h5>Class Period: {{newStartDate | date:'MMM dd, yyyy'}} to {{newEndDate | date:'MMM dd, yyyy'}}</h5>
+                  <h5>Class Period: {{newStartDate | date:'mm/dd/yy'}} to {{newEndDate | date:'mm/dd/yy'}}</h5>
                 </td>
               </tr>
               <tr class="tableHeadings">
@@ -183,13 +168,80 @@
       </div>
 
 
-      <div ng-show="currentPanel===2" layout="column" flex>
+  <div ng-show="currentPanel===2" layout="column" flex>      
+<!--         <section layout="row" layout-sm="column" layout-align="left center">
+          <md-button class="md-raised" ng-click="showPrevPanel(currentPanel)">Back</md-button>
+        </section> -->
+        <section layout="row" layout-sm="column" layout-align="left center">
+          <md-button class="md-raised" ng-click="showPrevPanel(currentPanel)">Back</md-button>
+        </section>
+<!-- 
+        <h3 class="text-center">Dura Stats</h3>
+ -->
 
-        <!-- dura table -->
+
+<div layout="row">
+
+  <md-content class="md-padding tradeData">
+    <md-tabs md-selected="selectedIndex" md-dynamic-height md-border-bottom>
+      <md-tab ng-repeat="(account, duraDates) in duraStats"
+              ng-disabled="tab.disabled"
+              label="{{account}}">
+        <div class="demo-tab tab{{$index%4}}" style="padding: 25px; text-align: center;">
+
+
+            <md-content class="md-padding">
+                <md-tabs md-selected="selectedIndex" md-dynamic-height md-border-bottom>
+                  <md-tab ng-repeat="(duraDate, trades) in duraDates"
+                          ng-disabled="tab.disabled"
+                          label="{{duraDate}}">
+                    <div class="demo-tab tab{{$index%4}}" style="padding: 25px; text-align: center;">
+                      <!-- dura table here -->
+
+                      <table class="statsTable table table-bordered table-condensed table-responsive disable-text-selection">
+                        <tbody>
+                          <tr>
+                            <td colspan=5>
+                              <h4>Shares Held Through {{duraDate}}</h4>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td><h5>Trade Date</h5></td>
+                            <td><h5>Shared Retained {{$index}}</h5></td>
+                            <td><h5>Price Per Share</h5></td>
+                            <td><h5>__Drop from $____ to $____ lessor of difference vs. $____</h5></td>
+                            <td><h5>Scenario {{$index}} Damages</h5></td>
+                          </tr>
+                          <tr ng-repeat="trade in trades">
+                            <td>{{trade.tradeDate | date: 'mm/dd/yy'}}</td>
+                            <td>{{trade.sharesRetained | number}}</td>
+                            <td>{{trade.pricePerShare}}</td>
+                            <td></td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
 
 
 
-      </div>
+                    </div>
+                  </md-tab>
+                </md-tabs>
+              </md-content>
+
+
+            </div>
+          </md-tab>
+        </md-tabs>
+      </md-content>
+    </div>
+
+
+  </div>
+
+
+
+  </div>
 
 </div>
 

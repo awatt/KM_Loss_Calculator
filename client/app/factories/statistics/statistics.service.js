@@ -147,12 +147,66 @@ angular.module('kmLossCalculatorApp')
     return totals;
   }
 
+  function generateDuraStats(duraDates, statsByAccountFIFO, statsByAccountLIFO){
+
+      console.log("got into generateDuraStats")
+      var duraStats = {};
+
+      for (var account in statsByAccountFIFO){
+
+        var keyFIFO = account + " (FIFO)";
+        duraStats[keyFIFO] = {};
+
+        duraDates.forEach(function(duraDate){
+
+          var closestSnapDate = "1980,01,01";
+
+          var snapShots = statsByAccountFIFO[account].duraStats;
+
+          for (var snapDate in snapShots){
+
+            if (snapDate > closestSnapDate && snapDate <= duraDate){
+              closestSnapDate = snapDate;
+            }
+          }
+
+          duraStats[keyFIFO][duraDate] = snapShots[closestSnapDate];
+
+        })
+      }
+
+      for (var account in statsByAccountLIFO){
+
+        var keyLIFO = account + " (LIFO)";
+        duraStats[keyLIFO] = {};
+
+        duraDates.forEach(function(duraDate){
+
+          var closestSnapDate = "1980,01,01";
+
+          var snapShots = statsByAccountLIFO[account].duraStats;
+
+          for (var snapDate in snapShots){
+
+            if (snapDate > closestSnapDate && snapDate <= duraDate){
+              closestSnapDate = snapDate;
+            }
+          }
+
+          duraStats[keyLIFO][duraDate] = snapShots[closestSnapDate];
+
+        })
+      }
+      return duraStats;
+  }
+
 
     // Public API here
     return {
       generateFIFO: generateFIFO,
       generateLIFO: generateLIFO,
-      calculateTotals: calculateTotals
+      calculateTotals: calculateTotals,
+      generateDuraStats: generateDuraStats
     };
   });
 
