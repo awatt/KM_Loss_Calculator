@@ -7,6 +7,7 @@ var Trade = require('./trade.model');
 exports.index = function(req, res) {
   Trade.find(function (err, trades) {
     if(err) { return handleError(res, err); }
+    console.log("got an error: ", res)
     return res.json(200, trades);
   });
 };

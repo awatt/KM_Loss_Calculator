@@ -1,12 +1,12 @@
 'use strict';
 
 var express = require('express');
-var controller = require('./trade.controller');
+var controller = require('./sale.controller');
 
 var router = express.Router();
 
-// router.get('/', controller.index);
 router.get('/', controller.index);
+router.get('/byDate', controller.findSales)
 router.get('/:id', controller.show);
 router.post('/', controller.create);
 router.put('/:id', controller.update);
