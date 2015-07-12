@@ -5,7 +5,7 @@
 module.exports = {
   // MongoDB connection options
   mongo: {
-    uri: 'mongodb://localhost/kmlosscalculator-dev'
+    uri: 'mongodb://localhost/kmlosscalculator-dev2'
   },
 
   seedDB: true

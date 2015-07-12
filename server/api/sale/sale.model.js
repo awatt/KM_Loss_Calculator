@@ -1,7 +1,6 @@
 'use strict';
 
 var mongoose = require('mongoose'),
-    mongooseQ = require('mongoose-q')(mongoose),
     Schema = mongoose.Schema;
 
 // var mongoose = require('mongoose'),
@@ -18,6 +17,6 @@ var SaleSchema = new Schema({
 	pricePerShare: Number
 });
 
-SaleSchema.index({ tradeDate: 1, allocatables: 1 }); 
+SaleSchema.index({ tradeDate: 1, allocatables: 1 });
 
 module.exports = mongoose.model('Sale', SaleSchema);

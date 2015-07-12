@@ -1,12 +1,29 @@
 'use strict';
 
+var _ = require('lodash');
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
 var BegholdingSchema = new Schema({
-  name: String,
-  info: String,
-  active: Boolean
+	account: String,
+	tradeDate: String,
+	transactionType: String,
+	quantity: Number,
+	allocatables: Number
 });
+
+
+BegholdingSchema.statics.findAllocatableBegHoldings = function(currentSale){
+	return this.find({}, 'tradeDate allocatables account transactionType')
+	.execAsync()
+	.then(function(data) {
+		var begHolding = _.findWhere(data, { 'account': currentSale.account});
+		var begAllocatables = null;
+		if (begHolding.allocatables){
+			begAllocatables = begHolding;
+		}
+		return begAllocatables;
+	})
+}
 
 module.exports = mongoose.model('Begholding', BegholdingSchema);

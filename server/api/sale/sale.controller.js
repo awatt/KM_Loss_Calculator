@@ -3,8 +3,14 @@
 var _ = require('lodash');
 var Sale = require('./sale.model');
 var Buy = require('../buy/buy.model');
-var mongoose = require('mongoose'),
-    mongooseQ = require('mongoose-q')(mongoose)
+var Dura = require('../dura/dura.model');
+var BegHolding = require('../begholding/begholding.model');
+// var mongoose = require('mongoose')
+var Promise = require("bluebird");
+Promise.promisifyAll(require("mongoose"));
+
+// var mongoose = require('mongoose'),
+//     mongooseBird = require('mongoose-bird')(mongoose)
 
 // Get list of sales
 exports.index = function(req, res) {
@@ -15,42 +21,120 @@ exports.index = function(req, res) {
 };
 
 
-// var findBuys = function(account, saleDate){
 
 
-// // var returnValue = Buy.find({ account: account, tradeDate: { $lte: saleDate }, allocatables: { $gt: 0 } }).sort( { tradeDate: 1, allocatables: -1 } ).limit(1);
+function allocateSale_FIFO (sale, buysArray){
 
-// return Buy.nextBuyToAllocate(account, saleDate);
+  var updatedBuysArray = [], allocatableSales = sale.allocatables;
 
-// }
+  for (var i = 0, max = buysArray.length; i < max; i++){
+
+    if (allocatableSales === 0){
+
+      var newDura = new Dura({
+        account: sale.account,
+        tradeDate: buysArray[i].tradeDate,
+        duraDate: sale.tradeDate,
+        quantity: buysArray[i].allocatables,
+        pricePerShare: buysArray[i].pricePerShare
+      });
+
+      updatedBuysArray.push(newDura.saveAsync());
+    }
+
+    if (allocatableSales + buysArray[i].allocatables <= 0){
+
+      updatedBuysArray.push(Buy.findByIdAndUpdateAsync(buysArray[i]._id, { allocatables: 0 }));
+
+      if(sale.transactionType === "WITHDRAWAL" && buysArray[i].transactionType === "BEGHOLDINGS"){
+        
+        updatedBuysArray.push(BegHolding.updateOne({account: sale.transferAccount}, {$inc: {allocatables: buysArray[i].allocatables }}))
+
+      } else if (sale.transactionType === "WITHDRAWAL") {
+
+        var newBuy = new Buy({
+          account: sale.transferAccount,
+          tradeDate: sale.tradeDate,
+          transactionType: 'BUY',
+          quantity: buysArray[i].allocatables,
+          allocatables: buysArray[i].allocatables,
+          pricePerShare: buysArray[i].pricePerShare
+        });
+
+        updatedBuysArray.push(newBuy.saveAsync());
+
+      }
+      allocatableSales += buysArray[i].allocatables;
+    }
+
+    if (allocatableSales + buysArray[i].allocatables > 0){
+      
+      updatedBuysArray.push(Buy.findByIdAndUpdateAsync(buysArray[i]._id, { allocatables: allocatableSales + buysArray[i].allocatables }));
+
+      if(sale.transactionType === "WITHDRAWAL" && buysArray[i].transactionType === "BEGHOLDINGS"){
+        
+        updatedBuysArray.push(BegHolding.updateOne({account: sale.transferAccount}, {$inc: {allocatables: -allocatableSales }}))
+
+      } else if (sale.transactionType === "WITHDRAWAL") {
+
+        var newBuy = new Buy({
+          account: sale.transferAccount,
+          tradeDate: sale.tradeDate,
+          transactionType: 'BUY',
+          quantity: allocatableSales,
+          allocatables: allocatableSales,
+          pricePerShare: buysArray[i].pricePerShare
+        });
+
+        updatedBuysArray.push(newBuy.saveAsync());
+
+      }
+    
+      var newDura = new Dura({
+        account: sale.account,
+        tradeDate: buysArray[i].tradeDate,
+        duraDate: sale.tradeDate,
+        quantity: allocatableSales + buysArray[i].allocatables,
+        pricePerShare: buysArray[i].pricePerShare
+      });
+
+      updatedBuysArray.push(newDura.saveAsync());
+
+      allocatableSales = 0;
+
+    }
+
+  }
+
+  return Promise.all(updatedBuysArray);
+
+}
+
+
 
 exports.findSales = function(req, res){
   console.log("got to findSales")
 
-  var stream = Sale.find({}, 'tradeDate allocatables account', { tradeDate: 1, allocatables: 1, _id: 0 }).sort( { tradeDate: 1, allocatables: 1 } ).stream();
+  var stream = Sale.find({}, 'tradeDate allocatables account transferAccount', { tradeDate: 1, allocatables: 1, _id: 0 }).sort( { tradeDate: 1, allocatables: 1 } ).stream();
 
-  stream.on('data', function(doc) {
+  stream.on('data', function(currentSale) {
 
   stream.pause();
 
-  //get next buy to allocate using async promise
-//get list of artist names by keyword search
-
-  Buy.find({}, 'tradeDate allocatables account', { tradeDate: 1, allocatables: -1, _id: 0 })
-  .sort( { tradeDate: 1, allocatables: -1 } )
-  .limit(1)
-  .where('account', doc.account)
-  .where('tradeDate').lte(doc.tradeDate)
-  .where('allocatables').gt(0)
-  .execQ()
-  .then(function (data) {
+  console.log("GOT HERE 1")
   
-
-  //do sychronous allocation stuff here and save
-  console.log('this is the sale in the hopper:', doc.account +" "+ doc.tradeDate +" "+ doc.allocatables)
-  console.log('this is the buydata returned from the find query:', data)
-  // console.log('this is the buy for allocating:', data[0].account +" "+ data[0].tradeDate +" "+ data[0].allocatables)
-
+  BegHolding.findAllocatableBegHoldings(currentSale)
+  .then(function(begAllocatables) {
+    console.log("ONE - begAllocatables: ", begAllocatables)
+    return Buy.findAllocatableBuys(begAllocatables, currentSale);
+  })
+  .then(function(buysArray){
+    console.log("TWO - buysArray: ", buysArray)
+    return allocateSale_FIFO(currentSale, buysArray);
+  })
+  .then(function(updatedBuysArray){
+    console.log("THREE - updatedBuysArray: ", updatedBuysArray)
+    console.log('this is the updatedBuysArray:', updatedBuysArray)
   })
   .then(function(){
     stream.resume();
@@ -60,13 +144,6 @@ exports.findSales = function(req, res){
   })
   .done();
 
-  
-
-  // console.log(nextBuy.account +" "+ nextBuy.tradeDate +" "+ nextBuy.allocatables)
-  
-
-  
-    // return res.write('200', doc);
   })
 
   stream.on('error', function (err) {
@@ -78,6 +155,8 @@ exports.findSales = function(req, res){
   })
 
 }
+
+
 
 // Get a single sale
 exports.show = function(req, res) {
