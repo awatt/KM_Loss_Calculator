@@ -42,9 +42,13 @@ function allocateSale_FIFO (sale, buysArray){
       updatedBuysArray.push(newDura.saveAsync());
     }
 
-    if (allocatableSales + buysArray[i].allocatables <= 0){
+    if (allocatableSales !== 0 && allocatableSales + buysArray[i].allocatables <= 0){
 
-      updatedBuysArray.push(Buy.findByIdAndUpdateAsync(buysArray[i]._id, { allocatables: 0 }));
+      if(buysArray[i].transactionType === "BEGHOLDINGS"){
+        updatedBuysArray.push(BegHolding.findByIdAndUpdateAsync(buysArray[i]._id, { $set: { allocatables: 0 }}));
+      } else {
+        updatedBuysArray.push(Buy.findByIdAndUpdateAsync(buysArray[i]._id, { $set: { allocatables: 0 }}));
+      }
 
       if(sale.transactionType === "WITHDRAWAL" && buysArray[i].transactionType === "BEGHOLDINGS"){
         
@@ -67,15 +71,19 @@ function allocateSale_FIFO (sale, buysArray){
       allocatableSales += buysArray[i].allocatables;
     }
 
-    if (allocatableSales + buysArray[i].allocatables > 0){
+    if (allocatableSales !== 0 && allocatableSales + buysArray[i].allocatables > 0){
       
-      updatedBuysArray.push(Buy.findByIdAndUpdateAsync(buysArray[i]._id, { allocatables: allocatableSales + buysArray[i].allocatables }));
+      if(buysArray[i].transactionType === "BEGHOLDINGS"){
+        updatedBuysArray.push(BegHolding.findByIdAndUpdateAsync(buysArray[i]._id, { $set: { allocatables: allocatableSales + buysArray[i].allocatables }}));
+      } else {
+        updatedBuysArray.push(Buy.findByIdAndUpdateAsync(buysArray[i]._id, { $set: { allocatables: allocatableSales + buysArray[i].allocatables }}));
+      }
 
       if(sale.transactionType === "WITHDRAWAL" && buysArray[i].transactionType === "BEGHOLDINGS"){
         
         updatedBuysArray.push(BegHolding.updateOne({account: sale.transferAccount}, {$inc: {allocatables: -allocatableSales }}))
 
-      } else if (sale.transactionType === "WITHDRAWAL") {
+      } else if (allocatableSales !== 0 && sale.transactionType === "WITHDRAWAL") {
 
         var newBuy = new Buy({
           account: sale.transferAccount,
@@ -110,18 +118,58 @@ function allocateSale_FIFO (sale, buysArray){
 
 }
 
+exports.resetAllocations = function(req, res){
 
+  Buy.find({})
+  .execAsync()
+  .then(function(buys){
+    return buys.forEach(function(elem){
+      Buy.updateAsync({ _id: elem._id }, { $set: { allocatables: elem.quantity }})
+    });
+  })
+  .then(function(){
+    console.log("BUY ALLOCATIONS RESET");
+  })
+  .catch(function (err) {
+   console.error(err); 
+  })
+  .done();
+
+  BegHolding.find({})
+  .execAsync()
+  .then(function(begholdings){
+    return begholdings.forEach(function(elem){
+      BegHolding.updateAsync({ _id: elem._id }, { $set: { allocatables: elem.quantity }})
+    })
+  })
+  .then(function(){
+    console.log("BEGHOLDINGS ALLOCATIONS RESET");
+  })
+  .catch(function (err) {
+   console.error(err); 
+  })
+  .done();
+
+  Dura.removeAsync({})
+  .then(function(){
+    console.log("DURA COLLECTION CLEARED")
+  })
+  .catch(function (err) {
+   console.error(err); 
+ })
+  .done();
+
+}
 
 exports.findSales = function(req, res){
-  console.log("got to findSales")
-
+  
   var stream = Sale.find({}, 'tradeDate allocatables account transferAccount', { tradeDate: 1, allocatables: 1, _id: 0 }).sort( { tradeDate: 1, allocatables: 1 } ).stream();
 
   stream.on('data', function(currentSale) {
 
   stream.pause();
 
-  console.log("GOT HERE 1")
+  console.log("this is sale in the hopper: ", currentSale)
   
   BegHolding.findAllocatableBegHoldings(currentSale)
   .then(function(begAllocatables) {
@@ -134,7 +182,6 @@ exports.findSales = function(req, res){
   })
   .then(function(updatedBuysArray){
     console.log("THREE - updatedBuysArray: ", updatedBuysArray)
-    console.log('this is the updatedBuysArray:', updatedBuysArray)
   })
   .then(function(){
     stream.resume();

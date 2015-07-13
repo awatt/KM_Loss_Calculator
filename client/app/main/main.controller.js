@@ -27,6 +27,14 @@ $scope.getNextSales = function(){
     
   }
 
+  $scope.resetAllocations = function(){
+
+    $http.get('/api/sales/reset').success(function(sales) {
+      console.log('reset allocations')
+    })
+    
+  }
+
   // $http.get('/api/trades').success(function(allTrades) {
 
   //   console.log("got here")

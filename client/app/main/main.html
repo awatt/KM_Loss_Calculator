@@ -14,6 +14,11 @@
           <md-button id="statsButton" class="md-raised md-primary" ng-click="getNextSales()">Get Next Sales</md-button>
           <md-content class="md-padding tradeData">
           <md-tabs md-dynamic-height md-border-bottom>
+
+          <md-button id="statsButton" class="md-raised md-primary" ng-click="resetAllocations()">Reset Allocations</md-button>
+          <md-content class="md-padding tradeData">
+          <md-tabs md-dynamic-height md-border-bottom>
+
   
           <md-tab ng-repeat="account in accounts"  label="{{account}}">
           <md-content class="md-padding">
