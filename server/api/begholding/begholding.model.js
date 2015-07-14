@@ -9,15 +9,15 @@ var BegholdingSchema = new Schema({
 	tradeDate: String,
 	transactionType: String,
 	quantity: Number,
+	quantityAdjusted: Number,
 	allocatables: Number
 });
 
 
 BegholdingSchema.statics.findAllocatableBegHoldings = function(currentSale){
-	return this.find({}, 'tradeDate allocatables account transactionType')
+	return this.find({}, 'tradeDate allocatables account transactionType quantity quantityAdjusted')
 	.execAsync()
 	.then(function(data) {
-		console.log("this is data in begholdings static find method: ", data)
 		var begHolding = _.findWhere(data, { 'account': currentSale.account});
 		var begAllocatables = null;
 		if (begHolding.allocatables){

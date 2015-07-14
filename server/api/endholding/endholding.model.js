@@ -4,9 +4,12 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
 var EndholdingSchema = new Schema({
-  name: String,
-  info: String,
-  active: Boolean
+	account: String,
+	tradeDate: String,
+	transactionType: String,
+	quantity: Number,
+	quantityAdjusted: Number,
+	allocatables: Number
 });
 
 module.exports = mongoose.model('Endholding', EndholdingSchema);

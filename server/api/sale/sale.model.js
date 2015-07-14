@@ -12,6 +12,7 @@ var SaleSchema = new Schema({
 	account: String,
 	tradeDate: String,
 	transactionType: String,
+	transferAccount: String,
 	quantity: Number,
 	allocatables: Number,
 	pricePerShare: Number

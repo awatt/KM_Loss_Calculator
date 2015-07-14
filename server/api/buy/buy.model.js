@@ -11,6 +11,7 @@ var BuySchema = new Schema({
 	tradeDate: String,
 	transactionType: String,
 	quantity: Number,
+	quantityAdjusted: Number,
 	allocatables: Number,
 	pricePerShare: Number
 });
@@ -18,7 +19,7 @@ var BuySchema = new Schema({
 BuySchema.index({ tradeDate: 1, allocatables: -1 });
 
 BuySchema.statics.findAllocatableBuys = function(begAllocatables, currentSale){
-	return this.find({}, 'tradeDate allocatables account transactionType', { tradeDate: 1, allocatables: -1, _id: 0 })
+	return this.find({}, 'tradeDate allocatables account transactionType pricePerShare quantity quantityAdjusted', { tradeDate: 1, allocatables: -1, _id: 0 })
 	.sort( { tradeDate: 1, allocatables: -1 } )
 	  // .limit(10)
 	  .where('account', currentSale.account)

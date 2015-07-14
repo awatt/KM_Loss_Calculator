@@ -18,7 +18,7 @@ angular.module('kmLossCalculatorApp')
     };
 
 
-$scope.getNextSales = function(){
+$scope.allocateSales = function(){
 
     $http.get('/api/sales/byDate').success(function(sales) {
       console.log('completed http call')
