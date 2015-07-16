@@ -31,8 +31,15 @@ function allocateSale_FIFO(currentSale, buysArray, classEndDate){
 
   if(currentSale.tradeDate <= classEndDate){
     var newTotal = new Total({
+      status: '',
       account: currentSale.account,
-      sales_class: -currentSale.quantity
+      buys_class: 0,
+      expenditures_class: 0,
+      sales_class: -currentSale.quantity,
+      sales_classAllocated: 0,
+      proceeds_class: 0,
+      sales_90Day: 0,
+      proceeds_90Day: 0
     });
     updatedBuysArray.push(newTotal.saveAsync());
   }
@@ -102,16 +109,28 @@ function allocateSale_FIFO(currentSale, buysArray, classEndDate){
         //update in-class and 90-day totals by the remaining amount of the buy's allocatables
         if(currentSale.tradeDate <= classEndDate){
           var newTotal = new Total({
+            status: '',
             account: currentSale.account,
+            buys_class: 0,
+            expenditures_class: 0,
+            sales_class: 0,
             sales_classAllocated: buysArray[i].allocatables,
-            proceeds_class: buysArray[i].allocatables*buysArray[i].pricePerShare
+            proceeds_class: buysArray[i].allocatables*buysArray[i].pricePerShare,
+            sales_90Day: 0,
+            proceeds_90Day: 0
           });
           updatedBuysArray.push(newTotal.saveAsync());
         } else {
           var newTotal = new Total({
+            status: '',
             account: currentSale.account,
+            buys_class: 0,
+            expenditures_class: 0,
+            sales_class: 0,
+            sales_classAllocated: 0,
+            proceeds_class: 0,
             sales_90Day: buysArray[i].allocatables,
-            proceeds_90Day: buysArray[i].allocatables*buysArray[i].pricePerShare
+            proceeds_90Day: buysArray[i].allocatables*buysArray[i].pricePerShare        
           });
           updatedBuysArray.push(newTotal.saveAsync());
         }
@@ -179,14 +198,26 @@ function allocateSale_FIFO(currentSale, buysArray, classEndDate){
           //update in-class and 90-day totals by the remaining amount of the buy's allocatables
         if(currentSale.tradeDate <= classEndDate){
           var newTotal = new Total({
+            status: '',
             account: currentSale.account,
+            buys_class: 0,
+            expenditures_class: 0,
+            sales_class: 0,
             sales_classAllocated: -currentSale.allocatables,
-            proceeds_class: -currentSale.allocatables*buysArray[i].pricePerShare
+            proceeds_class: -currentSale.allocatables*buysArray[i].pricePerShare,
+            sales_90Day: 0,
+            proceeds_90Day: 0
           });
           updatedBuysArray.push(newTotal.saveAsync());
         } else {
           var newTotal = new Total({
+            status: '',
             account: currentSale.account,
+            buys_class: 0,
+            expenditures_class: 0,
+            sales_class: 0,
+            sales_classAllocated: 0,
+            proceeds_class: 0,
             sales_90Day: -currentSale.allocatables,
             proceeds_90Day: -currentSale.allocatables*buysArray[i].pricePerShare
           });
@@ -205,15 +236,69 @@ function allocateSale_FIFO(currentSale, buysArray, classEndDate){
   return Promise.all(updatedBuysArray);
 
 }
-    
-// var sumClassBuys = _.once(function(buysArray, totals, currentSale, classEndDate){
-//   for (var i = 0, max = buysArray.length; i < max; i++){
-//     if (buysArray[i].tradeDate <= classEndDate && buysArray[i].transactionType !== "BEGHOLDINGS"){
-//       totals[currentSale.account].buys_class += buysArray[i].quantityAdjusted;
-//       totals[currentSale.account].expenditures_class += buysArray[i].quantityAdjusted*buysArray[i].pricePerShare;
-//     }
-//   }
-// });
+
+exports.generateStats = function(req, res){
+  var accounts = ['Account 1', 'Account 2']
+  var finalTotalsObject = {};
+
+  for (var i = 0, max = accounts.length; i < max; i++){
+    var newTotal = new Total({
+      status: 'final',
+      account: accounts[i],
+      buys_class: 0,
+      expenditures_class: 0,
+      sales_class: 0,
+      sales_classAllocated: 0,
+      proceeds_class: 0,
+      sales_90Day: 0,
+      proceeds_90Day: 0
+    });
+
+    finalTotalsObject[accounts[i]] = newTotal;
+
+  }
+
+  console.log("this is the finalTotalsObject: ", finalTotalsObject)
+
+  Total.find({})
+  .execAsync()
+  .then(function(totals){
+    // console.log("this is the totals query result: ", totals)
+
+    console.log("GOT TO THE BRINK OF THE LOOP")
+
+    for (var i = 0, max = totals.length;  i < max; i++){
+      console.log("GOT IN THE LO0P")
+
+      var finalTotals = finalTotalsObject[totals[i].account];
+      var total = totals[i];
+        console.log("this is total: ", total)
+        console.log("this is finalTotals: ", finalTotals)
+
+        finalTotals['buys_class'] += total['buys_class'];
+        finalTotals['expenditures_class'] += total['expenditures_class'];
+        finalTotals['sales_class'] += total['sales_class'];
+        finalTotals['sales_classAllocated'] += total['sales_classAllocated'];
+        finalTotals['sales_90day'] += total['sales_90day'];
+        finalTotals['proceeds_90day'] += total['proceeds_90day'];
+    }
+  })
+  .then(function(){
+    var finalTotalsByAccount = [];
+    for (var prop in finalTotalsObject){
+      finalTotalsByAccount.push(finalTotalsObject[prop].saveAsync());
+    }
+    return Promise.all(finalTotalsByAccount);
+  })
+  .then(function(finalTotalsArray){
+    console.log("this is the saved finalTotalsArray: ", finalTotalsArray)
+  })
+  .catch(function (err) {
+   console.error(err); 
+  })
+  .done();
+
+}
 
 exports.resetAllocations = function(req, res){
 

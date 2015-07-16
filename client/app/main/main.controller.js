@@ -27,6 +27,14 @@ $scope.allocateSales = function(){
     
   }
 
+  $scope.generateStats = function(){
+
+    $http.get('/api/sales/stats').success(function(sales) {
+      console.log('reset allocations')
+    })
+    
+  }
+
   $scope.resetAllocations = function(){
 
     $http.get('/api/sales/reset').success(function(sales) {
